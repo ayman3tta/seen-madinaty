@@ -74,7 +74,8 @@ const FINISH=['تشطيب شركة','تشطيب خاص (تجاري)','تشطيب
 let items=[],kind='rent',filt='all',term='',db=null,loaded=false;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const wa=p=>'https://wa.me/2'+String(p).replace(/\D/g,'').replace(/^2/,'');
+const wa=p=>{const s=normPhone(p).replace(/^0/,'');return s?'https://wa.me/20'+s:''};
+const normPhone=p=>{let s=String(p??'').trim().replace(/\D/g,'');if(s.length===10&&/^(10|11|12|15)/.test(s))s='0'+s;return s};
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
 
 function dueBadge(d){
@@ -109,14 +110,14 @@ function card(x){
   <div class="price">${esc(x.price)||'السعر غير محدد'}</div><div class="meta">${esc(x.model)} • ${esc(x.finish)}</div>
   ${dueBadge(x.next)}${acts(x.phone)}</div>`;
 }
-const acts=p=>p?`<div class="acts"><a class="btn p" href="tel:${esc(p)}">📞 اتصال</a><a class="btn" target="_blank" href="${wa(p)}">💬 واتساب</a></div>`:'';
+const acts=p=>{const n=normPhone(p);return n?`<div class="acts"><a class="btn p" href="tel:${esc(n)}">📞 اتصال</a><a class="btn" target="_blank" href="${wa(p)}">💬 واتساب</a></div>`:''};
 
 function open(html){$('panel').innerHTML=html;$('sheet').classList.add('show')}
 function close(){$('sheet').classList.remove('show')}
 function detail(x){
   const U=x.kind!='client';
-  const rows=U?[['العنوان',x.addr],['المرحلة',x.phase],['المساحة',x.model],['التشطيب',x.finish],['السعر',x.price],['الموقف المالي',x.money],['المالك',x.owner],['الهاتف',x.phone],['آخر تواصل',x.last],['المتابعة الجاية',x.next],['آخر إجراء',x.summary],['ملاحظات',x.notes]]
-   :[['الاسم',x.name],['الهاتف',x.phone],['المرحلة المطلوبة',x.phase],['الميزانية',x.budget],['الغرض',x.purpose],['المتابعة الجاية',x.next],['ملاحظات',x.notes]];
+  const rows=U?[['العنوان',x.addr],['المرحلة',x.phase],['المساحة',x.model],['التشطيب',x.finish],['السعر',x.price],['الموقف المالي',x.money],['المالك',x.owner],['الهاتف',normPhone(x.phone)],['آخر تواصل',x.last],['المتابعة الجاية',x.next],['آخر إجراء',x.summary],['ملاحظات',x.notes]]
+   :[['الاسم',x.name],['الهاتف',normPhone(x.phone)],['المرحلة المطلوبة',x.phase],['الميزانية',x.budget],['الغرض',x.purpose],['المتابعة الجاية',x.next],['ملاحظات',x.notes]];
   open(`<h3 style="margin:0 0 6px">${esc(U?x.addr:x.name)}</h3>`+rows.filter(r=>r[1]).map(r=>`<div class="kv"><span>${r[0]}</span><span>${r[0]=='المتابعة الجاية'?dueBadge(r[1]):esc(r[1])}</span></div>`).join('')+acts(x.phone)+
    `<div class="acts"><button class="btn" id="ed">✏️ تعديل</button><button class="btn" id="cl">إغلاق</button></div>`);
   $('ed').onclick=()=>form(x.kind,x);$('cl').onclick=close;
@@ -158,8 +159,13 @@ document.addEventListener('click',e=>{
 });
 $('fab').onclick=()=>form(kind);
 
+const DEFAULT_GS_URL='https://script.google.com/macros/s/AKfycbzIGs4SEZMPw3LzPvWeoKTdt_E54IMwdDsX5CodUMAiOwAXinCj5F9hjgxZh-cGGFA5vA/exec';
 const GS_KEY='simsar_gs_url';
-let gsUrl=localStorage.getItem(GS_KEY)||'';
+let gsUrl=localStorage.getItem(GS_KEY);
+if(!gsUrl||!gsUrl.trim()){
+  gsUrl=DEFAULT_GS_URL;
+  localStorage.setItem(GS_KEY,gsUrl);
+}
 
 function updateSyncStatus(st){
   const dot=$('sync_dot');

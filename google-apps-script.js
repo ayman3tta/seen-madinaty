@@ -60,7 +60,13 @@ function rowToObject(row) {
 }
 
 function objectToRow(obj) {
-  return COLS.map(c => obj[c.key] != null ? obj[c.key] : '');
+  return COLS.map(c => {
+    let val = obj[c.key] != null ? obj[c.key] : '';
+    if (c.key === 'phone' && val && String(val).startsWith('0')) {
+      return "'" + val;
+    }
+    return val;
+  });
 }
 
 function doGet(e) {
