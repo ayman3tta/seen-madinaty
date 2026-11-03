@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سيستم السمسار – مدينتي</title>
+<script src="data/data.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#6b7480;--bd:#e3e6ea;--pri:#0f766e;--prit:#fff;--ok:#15803d;--warn:#b45309;--no:#b91c1c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12161a;--card:#1b2127;--tx:#eceff2;--mut:#9aa4af;--bd:#2a323a;--pri:#2dd4bf;--prit:#06201d;--ok:#4ade80;--warn:#fbbf24;--no:#f87171}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:16px;padding-bottom:90px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 12px 6px;z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.search{width:100%;padding:12px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);font:inherit}
+.tabs{display:flex;gap:6px;margin-top:8px}
+.tab{flex:1;padding:10px 2px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;font-size:14px;font-weight:600}
+.tab.on{background:var(--pri);color:var(--prit);border-color:var(--pri)}
+.chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
+.chip{white-space:nowrap;padding:6px 12px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--mut);font:inherit;font-size:13px}
+.chip.on{border-color:var(--pri);color:var(--pri);font-weight:700}
+main{padding:6px 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin:8px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.addr{font-weight:800;font-size:17px}
+.price{color:var(--pri);font-weight:700;margin-top:4px}
+.meta{color:var(--mut);font-size:13px;margin-top:4px}
+.badge{font-size:12px;padding:3px 9px;border-radius:99px;font-weight:700;border:1px solid currentColor;white-space:nowrap}
+.avail{color:var(--ok)}.nego{color:var(--warn)}.done{color:var(--no)}
+.acts{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;text-align:center;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-weight:700;text-decoration:none;font-size:15px}
+.btn.p{background:var(--pri);color:var(--prit);border-color:var(--pri)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.fab{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--pri);color:var(--prit);font-size:32px;box-shadow:0 4px 14px #0004;z-index:6}
+.sheet{position:fixed;inset:0;background:#0007;z-index:20;display:none;align-items:flex-end}
+.sheet.show{display:flex}
+.panel{background:var(--bg);width:100%;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:14px 14px calc(20px + env(safe-area-inset-bottom,0px))}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font:inherit}
+textarea{min-height:70px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);font-size:15px}
+.kv span:first-child{color:var(--mut);white-space:nowrap}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:99px;z-index:30;display:none;font-size:14px}
+.sm{font-size:13px;color:var(--mut);text-align:center;margin:14px 0}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;gap:8px"><input id="q" class="search" type="search" placeholder="🔍 ابحث: عنوان / مرحلة / اسم / رقم"><button class="tab" id="gear" style="flex:0 0 52px">⚙️</button></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="chips" id="chips"></div>
+</header>
+<main id="list"></main>
+<button class="fab" id="fab" aria-label="إضافة">＋</button>
+<div class="sheet" id="sheet"><div class="panel" id="panel"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KINDS={rent:'إيجار',sale:'بيع',furn:'مفروش',client:'عملاء'};
+const ST={avail:'متاحة',nego:'تفاوض/حجز',done:'تم'};
+const CST={new:'جديد',follow:'متابعة',visit:'معاينة',done:'تم التعاقد',lost:'خسرناه'};
+const FINISH=['تشطيب شركة','تشطيب خاص (تجاري)','تشطيب خاص (فاخر)','بدون تشطيب'];
+let items=[],kind='rent',filt='all',term='',db=null,loaded=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const wa=p=>'https://wa.me/2'+String(p).replace(/\D/g,'').replace(/^2/,'');
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
+
+function render(){
+  $('tabs').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button class="tab ${k==kind?'on':''}" data-k="${k}">${v}</button>`).join('');
+  const opts=kind=='client'?CST:ST;
+  $('chips').innerHTML=[['all','الكل'],...Object.entries(opts)].map(([k,v])=>`<button class="chip ${k==filt?'on':''}" data-f="${k}">${v}</button>`).join('');
+  const f=term.trim();
+  const rows=items.filter(x=>x.kind==kind&&(filt=='all'||(kind=='client'?x.stage:x.status)==filt)&&(!f||JSON.stringify(x).includes(f)))
+    .sort((a,b)=>(a.next||'9')<(b.next||'9')?-1:1);
+  $('list').innerHTML=!loaded?'<div class="empty">جاري التحميل…</div>':rows.length?rows.map(card).join('')+`<div class="sm">${rows.length} نتيجة</div>`:'<div class="empty">مفيش نتائج<br>اضغط ＋ للإضافة</div>';
+}
+function card(x){
+  if(x.kind=='client')return `<div class="card" data-id="${x.id}"><div class="row"><div class="addr">${esc(x.name)}</div><span class="badge">${CST[x.stage]||''}</span></div>
+  <div class="price">${esc(x.budget)}</div><div class="meta">${esc(x.purpose)} ${x.phase?'• '+esc(x.phase):''} ${x.next?'• متابعة: '+esc(x.next):''}</div>${acts(x.phone)}</div>`;
+  return `<div class="card" data-id="${x.id}"><div class="row"><div class="addr">${esc(x.addr)} <small style="color:var(--mut);font-weight:600">${esc(x.phase)}</small></div><span class="badge ${x.status}">${ST[x.status]}</span></div>
+  <div class="price">${esc(x.price)||'السعر غير محدد'}</div><div class="meta">${esc(x.model)} • ${esc(x.finish)}</div>
+  ${x.next?`<div class="meta">📅 المتابعة: ${esc(x.next)}</div>`:''}${acts(x.phone)}</div>`;
+}
+const acts=p=>p?`<div class="acts"><a class="btn p" href="tel:${esc(p)}">📞 اتصال</a><a class="btn" target="_blank" href="${wa(p)}">💬 واتساب</a></div>`:'';
+
+function open(html){$('panel').innerHTML=html;$('sheet').classList.add('show')}
+function close(){$('sheet').classList.remove('show')}
+function detail(x){
+  const U=x.kind!='client';
+  const rows=U?[['العنوان',x.addr],['المرحلة',x.phase],['المساحة',x.model],['التشطيب',x.finish],['السعر',x.price],['الموقف المالي',x.money],['المالك',x.owner],['الهاتف',x.phone],['آخر تواصل',x.last],['المتابعة الجاية',x.next],['آخر إجراء',x.summary],['ملاحظات',x.notes]]
+   :[['الاسم',x.name],['الهاتف',x.phone],['المرحلة المطلوبة',x.phase],['الميزانية',x.budget],['الغرض',x.purpose],['المتابعة الجاية',x.next],['ملاحظات',x.notes]];
+  open(`<h3 style="margin:0 0 6px">${esc(U?x.addr:x.name)}</h3>`+rows.filter(r=>r[1]).map(r=>`<div class="kv"><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('')+acts(x.phone)+
+   `<div class="acts"><button class="btn" id="ed">✏️ تعديل</button><button class="btn" id="cl">إغلاق</button></div>`);
+  $('ed').onclick=()=>form(x.kind,x);$('cl').onclick=close;
+}
+const F=(n,l,v,t='text')=>`<label>${l}</label><input name="${n}" type="${t}" value="${esc(v)}">`;
+function form(k,x={}){
+  const U=k!='client';
+  const body=U?`${F('addr','العنوان (مثال 63-5-23)',x.addr)}${F('phase','المرحلة (B6)',x.phase)}${F('model','المساحة والغرف',x.model)}
+  <label>التشطيب</label><select name="finish">${FINISH.map(o=>`<option ${o==x.finish?'selected':''}>${o}</option>`).join('')}</select>
+  ${F('price',k=='sale'?'السعر المطلوب':'الإيجار المطلوب',x.price)}${k=='sale'?F('money','الموقف المالي (خالصة/أقساط)',x.money):''}
+  ${F('owner','اسم المالك',x.owner)}${F('phone','رقم المالك',x.phone,'tel')}
+  <label>الحالة</label><select name="status">${Object.entries(ST).map(([a,b])=>`<option value="${a}" ${a==(x.status||'avail')?'selected':''}>${b}</option>`).join('')}</select>
+  ${F('last','آخر تواصل',x.last,'date')}${F('next','المتابعة الجاية',x.next,'date')}`
+  :`${F('name','اسم العميل',x.name)}${F('phone','رقم الهاتف',x.phone,'tel')}${F('phase','المرحلة المطلوبة',x.phase)}${F('budget','الميزانية وطريقة السداد',x.budget)}
+  <label>الغرض</label><select name="purpose">${['إيجار','شراء','مفروش'].map(o=>`<option ${o==x.purpose?'selected':''}>${o}</option>`).join('')}</select>
+  <label>الحالة</label><select name="stage">${Object.entries(CST).map(([a,b])=>`<option value="${a}" ${a==(x.stage||'new')?'selected':''}>${b}</option>`).join('')}</select>${F('next','المتابعة الجاية',x.next,'date')}`;
+  const sel=x.id?'':`<label>النوع</label><select id="kk">${Object.entries(KINDS).map(([a,b])=>`<option value="${a}" ${a==k?'selected':''}>${b}</option>`).join('')}</select>`;
+  open(`<h3 style="margin:0">${x.id?'تعديل':'إضافة'}</h3>${sel}<form id="f" onsubmit="return false">${body}<label>ملاحظات</label><textarea name="notes">${esc(x.notes)}</textarea></form>
+  <div class="acts"><button class="btn p" id="sv">💾 حفظ</button><button class="btn" id="cl">إلغاء</button>${x.id?'<button class="btn" id="dl" style="color:var(--no)">حذف</button>':''}</div>`);
+  if($('kk'))$('kk').onchange=e=>form(e.target.value,x);
+  $('cl').onclick=close;
+  $('sv').onclick=async()=>{
+    const d={kind:k,...Object.fromEntries(new FormData($('f')))};
+    if(U&&!d.addr&&!d.phone)return toast('اكتب العنوان أو الرقم');
+    if(!U&&!d.name)return toast('اكتب اسم العميل');
+    if(d.phone)d.phone=d.phone.replace(/\D/g,'');
+    const id=x.id||'n'+Date.now().toString(36);
+    try{put({...x,...d,id});close();toast('تم الحفظ ✅');kind=k}catch(e){toast('مقدرتش أحفظ')}
+  };
+  if($('dl'))$('dl').onclick=async()=>{if(confirm('تحذف نهائي؟')){del(x.id);close();toast('تم الحذف')}};
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-k]');if(t){kind=t.dataset.k;filt='all';return render()}
+  const c=e.target.closest('[data-f]');if(c){filt=c.dataset.f;return render()}
+  if(e.target.closest('.acts'))return;
+  const cd=e.target.closest('.card');if(cd){const x=items.find(i=>i.id==cd.dataset.id);if(x)detail(x)}
+  if(e.target==$('sheet'))close();
+});
+$('fab').onclick=()=>form(kind);
+$('gear').onclick=()=>{open(`<h3 style="margin:0 0 8px">⚙️ الإعدادات</h3>
+<div class="sm" style="text-align:right;margin:0 0 10px">البيانات متخزنة على الجهاز ده. خد نسخة احتياطية من وقت للتاني.</div>
+<div class="acts"><button class="btn p" id="bk">⬇️ نسخة احتياطية</button></div>
+<div class="acts"><button class="btn" id="im">⬆️ استيراد نسخة</button></div>
+<input type="file" id="fi" accept=".json,.js" style="display:none">
+<div class="acts"><button class="btn" id="cl">إغلاق</button></div>`);
+$('cl').onclick=close;
+$('bk').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,1)],{type:'application/json'}));a.download='simsar-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+$('im').onclick=()=>$('fi').click();
+$('fi').onchange=async e=>{try{const t=await e.target.files[0].text();const a=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1));if(!confirm('استيراد '+a.length+' عنصر؟ (هيضاف/يتحدّث بنفس الـ id)'))return;a.forEach(x=>{if(!x.id)x.id='n'+Math.random().toString(36).slice(2,9);const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x});save();close();render();toast('تم الاستيراد ✅')}catch(err){toast('الملف مش مظبوط')}};
+};
+$('q').oninput=e=>{term=e.target.value;render()};
+
+const LS='simsar_items',LD='simsar_deleted';
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+function save(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){toast('التخزين ممتلي')}}
+function put(x){const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x;save();render()}
+function del(id){items=items.filter(y=>y.id!=id);const d=ld(LD,[]);d.push(id);localStorage.setItem(LD,JSON.stringify(d));save();render()}
+items=ld(LS,[]);
+const gone=new Set(ld(LD,[]));
+(window.SIMSAR_DATA||[]).forEach(x=>{if(x.id&&!gone.has(x.id)&&!items.some(y=>y.id==x.id))items.push(x)});
+save();loaded=true;render();
+</script>
+</body>
+</html>
