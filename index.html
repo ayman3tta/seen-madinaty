@@ -29,6 +29,15 @@ main{padding:6px 12px}
 .meta{color:var(--mut);font-size:13px;margin-top:4px}
 .badge{font-size:12px;padding:3px 9px;border-radius:99px;font-weight:700;border:1px solid currentColor;white-space:nowrap}
 .avail{color:var(--ok)}.nego{color:var(--warn)}.done{color:var(--no)}
+.due-tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:8px;margin-top:6px;border:1px solid transparent}
+.due-over{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+.due-today{background:#fef3c7;color:#b45309;border-color:#fde68a}
+.due-soon{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+@media (prefers-color-scheme:dark){
+:root:not([data-theme="light"]) .due-over{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+:root:not([data-theme="light"]) .due-today{background:#451a03;color:#fcd34d;border-color:#78350f}
+:root:not([data-theme="light"]) .due-soon{background:#064e3b;color:#a7f3d0;border-color:#047857}
+}
 .acts{display:flex;gap:8px;margin-top:10px}
 .btn{flex:1;text-align:center;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-weight:700;text-decoration:none;font-size:15px}
 .btn.p{background:var(--pri);color:var(--prit);border-color:var(--pri)}
@@ -68,6 +77,22 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const wa=p=>'https://wa.me/2'+String(p).replace(/\D/g,'').replace(/^2/,'');
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
 
+function dueBadge(d){
+  if(!d)return '';
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const day=String(now.getDate()).padStart(2,'0');
+  const today=`${y}-${m}-${day}`;
+  if(d<today){
+    return `<div class="due-tag due-over">🚨 المتابعة: ${esc(d)} (فات الميعاد)</div>`;
+  }else if(d===today){
+    return `<div class="due-tag due-today">🔔 المتابعة: ${esc(d)} (اليوم)</div>`;
+  }else{
+    return `<div class="due-tag due-soon">📅 المتابعة: ${esc(d)} (قادمة)</div>`;
+  }
+}
+
 function render(){
   $('tabs').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button class="tab ${k==kind?'on':''}" data-k="${k}">${v}</button>`).join('');
   const opts=kind=='client'?CST:ST;
@@ -79,10 +104,10 @@ function render(){
 }
 function card(x){
   if(x.kind=='client')return `<div class="card" data-id="${x.id}"><div class="row"><div class="addr">${esc(x.name)}</div><span class="badge">${CST[x.stage]||''}</span></div>
-  <div class="price">${esc(x.budget)}</div><div class="meta">${esc(x.purpose)} ${x.phase?'• '+esc(x.phase):''} ${x.next?'• متابعة: '+esc(x.next):''}</div>${acts(x.phone)}</div>`;
+  <div class="price">${esc(x.budget)}</div><div class="meta">${esc(x.purpose)} ${x.phase?'• '+esc(x.phase):''}</div>${dueBadge(x.next)}${acts(x.phone)}</div>`;
   return `<div class="card" data-id="${x.id}"><div class="row"><div class="addr">${esc(x.addr)} <small style="color:var(--mut);font-weight:600">${esc(x.phase)}</small></div><span class="badge ${x.status}">${ST[x.status]}</span></div>
   <div class="price">${esc(x.price)||'السعر غير محدد'}</div><div class="meta">${esc(x.model)} • ${esc(x.finish)}</div>
-  ${x.next?`<div class="meta">📅 المتابعة: ${esc(x.next)}</div>`:''}${acts(x.phone)}</div>`;
+  ${dueBadge(x.next)}${acts(x.phone)}</div>`;
 }
 const acts=p=>p?`<div class="acts"><a class="btn p" href="tel:${esc(p)}">📞 اتصال</a><a class="btn" target="_blank" href="${wa(p)}">💬 واتساب</a></div>`:'';
 
@@ -92,7 +117,7 @@ function detail(x){
   const U=x.kind!='client';
   const rows=U?[['العنوان',x.addr],['المرحلة',x.phase],['المساحة',x.model],['التشطيب',x.finish],['السعر',x.price],['الموقف المالي',x.money],['المالك',x.owner],['الهاتف',x.phone],['آخر تواصل',x.last],['المتابعة الجاية',x.next],['آخر إجراء',x.summary],['ملاحظات',x.notes]]
    :[['الاسم',x.name],['الهاتف',x.phone],['المرحلة المطلوبة',x.phase],['الميزانية',x.budget],['الغرض',x.purpose],['المتابعة الجاية',x.next],['ملاحظات',x.notes]];
-  open(`<h3 style="margin:0 0 6px">${esc(U?x.addr:x.name)}</h3>`+rows.filter(r=>r[1]).map(r=>`<div class="kv"><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('')+acts(x.phone)+
+  open(`<h3 style="margin:0 0 6px">${esc(U?x.addr:x.name)}</h3>`+rows.filter(r=>r[1]).map(r=>`<div class="kv"><span>${r[0]}</span><span>${r[0]=='المتابعة الجاية'?dueBadge(r[1]):esc(r[1])}</span></div>`).join('')+acts(x.phone)+
    `<div class="acts"><button class="btn" id="ed">✏️ تعديل</button><button class="btn" id="cl">إغلاق</button></div>`);
   $('ed').onclick=()=>form(x.kind,x);$('cl').onclick=close;
 }
