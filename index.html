@@ -57,7 +57,7 @@ textarea{min-height:70px}
 </head>
 <body>
 <header>
-  <div style="display:flex;gap:8px"><input id="q" class="search" type="search" placeholder="🔍 ابحث: عنوان / مرحلة / اسم / رقم"><button class="tab" id="gear" style="flex:0 0 52px">⚙️</button></div>
+  <div style="display:flex;gap:8px;align-items:center"><input id="q" class="search" type="search" placeholder="🔍 ابحث: عنوان / مرحلة / اسم / رقم"><button class="tab" id="gear" style="flex:0 0 52px;position:relative" title="الإعدادات والمزامنة">⚙️<span id="sync_dot" style="position:absolute;top:4px;left:4px;width:9px;height:9px;border-radius:50%;background:#10b981;display:none;border:1.5px solid var(--card)" title="جوجل شيت"></span></button></div>
   <div class="tabs" id="tabs"></div>
   <div class="chips" id="chips"></div>
 </header>
@@ -157,28 +157,158 @@ document.addEventListener('click',e=>{
   if(e.target==$('sheet'))close();
 });
 $('fab').onclick=()=>form(kind);
-$('gear').onclick=()=>{open(`<h3 style="margin:0 0 8px">⚙️ الإعدادات</h3>
-<div class="sm" style="text-align:right;margin:0 0 10px">البيانات متخزنة على الجهاز ده. خد نسخة احتياطية من وقت للتاني.</div>
-<div class="acts"><button class="btn p" id="bk">⬇️ نسخة احتياطية</button></div>
-<div class="acts"><button class="btn" id="im">⬆️ استيراد نسخة</button></div>
-<input type="file" id="fi" accept=".json,.js" style="display:none">
-<div class="acts"><button class="btn" id="cl">إغلاق</button></div>`);
-$('cl').onclick=close;
-$('bk').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,1)],{type:'application/json'}));a.download='simsar-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
-$('im').onclick=()=>$('fi').click();
-$('fi').onchange=async e=>{try{const t=await e.target.files[0].text();const a=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1));if(!confirm('استيراد '+a.length+' عنصر؟ (هيضاف/يتحدّث بنفس الـ id)'))return;a.forEach(x=>{if(!x.id)x.id='n'+Math.random().toString(36).slice(2,9);const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x});save();close();render();toast('تم الاستيراد ✅')}catch(err){toast('الملف مش مظبوط')}};
+
+const GS_KEY='simsar_gs_url';
+let gsUrl=localStorage.getItem(GS_KEY)||'';
+
+function updateSyncStatus(st){
+  const dot=$('sync_dot');
+  if(!dot)return;
+  if(!gsUrl||st=='local'){
+    dot.style.display='none';
+  } else if(st=='syncing'){
+    dot.style.display='block';
+    dot.style.background='#f59e0b';
+    dot.title='جاري المزامنة مع جوجل شيت...';
+  } else if(st=='online'){
+    dot.style.display='block';
+    dot.style.background='#10b981';
+    dot.title='متصل بجوجل شيت وتتم المزامنة بنجاح';
+  } else if(st=='error'){
+    dot.style.display='block';
+    dot.style.background='#ef4444';
+    dot.title='تعذر الاتصال بجوجل شيت';
+  }
+}
+
+async function syncToSheet(payload){
+  if(!gsUrl)return;
+  try{
+    updateSyncStatus('syncing');
+    await fetch(gsUrl,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload)
+    });
+    updateSyncStatus('online');
+  }catch(e){
+    console.warn('Sync error:',e);
+    updateSyncStatus('error');
+  }
+}
+
+async function loadFromGoogleSheets(silent=false){
+  if(!gsUrl)return;
+  try{
+    updateSyncStatus('syncing');
+    const sep=gsUrl.includes('?')?'&':'?';
+    const res=await fetch(gsUrl+sep+'action=getAll&_t='+Date.now());
+    const json=await res.json();
+    if(json.success&&Array.isArray(json.data)&&json.data.length>0){
+      items=json.data;
+      save();
+      render();
+      updateSyncStatus('online');
+      if(!silent)toast('تم تحديث '+items.length+' عنصر من جوجل شيت ✅');
+    }else{
+      updateSyncStatus('online');
+      if(!silent)toast('الشيت لا يحتوي على بيانات بعد');
+    }
+  }catch(e){
+    console.error('GS load error:',e);
+    updateSyncStatus('error');
+    if(!silent)toast('تعذر الاتصال بجوجل شيت ⚠️');
+  }
+}
+
+$('gear').onclick=()=>{
+  open(`<h3 style="margin:0 0 8px">⚙️ الإعدادات والمزامنة</h3>
+  <div style="background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0">
+    <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+      <span>📊 الربط مع Google Sheets</span>
+      <span style="font-size:12px;font-weight:600;color:${gsUrl?'var(--ok)':'var(--mut)'}">${gsUrl?'🟢 متصل':'⚪ غير متصل'}</span>
+    </div>
+    <div class="sm" style="text-align:right;margin:0 0 8px">ضع رابط Web App الخاص بـ Google Apps Script:</div>
+    <input id="gs_inp" type="url" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(gsUrl)}">
+    <div class="acts" style="margin-top:8px">
+      <button class="btn p" id="gs_save">💾 حفظ الرابط</button>
+    </div>
+    <div class="acts">
+      <button class="btn" id="gs_push">📤 رفع بيانات السيستم للشيت</button>
+      <button class="btn" id="gs_pull">🔄 تحديث من الشيت</button>
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0">
+    <div style="font-weight:700;margin-bottom:6px">💾 نسخة احتياطية محلية</div>
+    <div class="acts"><button class="btn p" id="bk">⬇️ تحميل نسخة (JSON)</button></div>
+    <div class="acts"><button class="btn" id="im">⬆️ استيراد نسخة</button></div>
+    <input type="file" id="fi" accept=".json,.js" style="display:none">
+  </div>
+  <div class="acts"><button class="btn" id="cl">إغلاق</button></div>`);
+
+  $('cl').onclick=close;
+  $('gs_save').onclick=()=>{
+    const u=$('gs_inp').value.trim();
+    gsUrl=u;
+    localStorage.setItem(GS_KEY,u);
+    updateSyncStatus(gsUrl?'online':'local');
+    toast('تم حفظ الرابط ✅');
+    if(gsUrl)loadFromGoogleSheets(false);
+  };
+  $('gs_push').onclick=async()=>{
+    const u=$('gs_inp').value.trim()||gsUrl;
+    if(!u)return toast('اكتب رابط الـ Web App أولاً');
+    toast('جاري رفع '+items.length+' عنصر لشيت جوجل... ⏳');
+    try{
+      updateSyncStatus('syncing');
+      await fetch(u,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'bulkPut',items:items})
+      });
+      updateSyncStatus('online');
+      toast('تم رفع كل البيانات إلى شيت جوجل بنجاح ✅');
+    }catch(e){
+      console.error(e);
+      updateSyncStatus('error');
+      toast('حدث خطأ أثناء الرفع، تأكد من إعدادات النشر');
+    }
+  };
+  $('gs_pull').onclick=()=>loadFromGoogleSheets(false);
+
+  $('bk').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,1)],{type:'application/json'}));a.download='simsar-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+  $('im').onclick=()=>$('fi').click();
+  $('fi').onchange=async e=>{try{const t=await e.target.files[0].text();const a=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1));if(!confirm('استيراد '+a.length+' عنصر؟ (هيضاف/يتحدّث بنفس الـ id)'))return;a.forEach(x=>{if(!x.id)x.id='n'+Math.random().toString(36).slice(2,9);const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x});save();close();render();toast('تم الاستيراد ✅')}catch(err){toast('الملف مش مظبوط')}};
 };
+
 $('q').oninput=e=>{term=e.target.value;render()};
 
 const LS='simsar_items',LD='simsar_deleted';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 function save(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){toast('التخزين ممتلي')}}
-function put(x){const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x;save();render()}
-function del(id){items=items.filter(y=>y.id!=id);const d=ld(LD,[]);d.push(id);localStorage.setItem(LD,JSON.stringify(d));save();render()}
+function put(x){
+  const i=items.findIndex(y=>y.id==x.id);
+  i<0?items.push(x):items[i]=x;
+  save();
+  render();
+  if(gsUrl)syncToSheet({action:'put',item:x});
+}
+function del(id){
+  items=items.filter(y=>y.id!=id);
+  const d=ld(LD,[]);
+  d.push(id);
+  localStorage.setItem(LD,JSON.stringify(d));
+  save();
+  render();
+  if(gsUrl)syncToSheet({action:'del',id:id});
+}
 items=ld(LS,[]);
 const gone=new Set(ld(LD,[]));
 (window.SIMSAR_DATA||[]).forEach(x=>{if(x.id&&!gone.has(x.id)&&!items.some(y=>y.id==x.id))items.push(x)});
 save();loaded=true;render();
+updateSyncStatus(gsUrl?'online':'local');
+if(gsUrl)loadFromGoogleSheets(true);
 </script>
 </body>
 </html>
