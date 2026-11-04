@@ -264,17 +264,30 @@ function doGet(e) {
       let logs = [];
       if (lastRow > 1) {
         const rows = logSheet.getRange(2, 1, lastRow - 1, LOG_COLS.length).getValues();
-        logs = rows.map(r => ({
-          logId: r[0],
-          time: r[1],
-          actionName: r[2],
-          targetKind: r[3],
-          targetTitle: r[4],
-          targetId: r[5],
-          isUndone: String(r[9]).includes('تم التراجع')
-        }));
+        logs = rows.map(r => {
+          let b = null, a = null;
+          try { b = r[6] ? JSON.parse(r[6]) : null; } catch(_) {}
+          try { a = r[7] ? JSON.parse(r[7]) : null; } catch(_) {}
+          return {
+            logId: r[0],
+            time: r[1],
+            actionName: r[2],
+            targetKind: r[3],
+            targetTitle: r[4],
+            targetId: r[5],
+            before: b,
+            after: a,
+            isUndone: String(r[9]).includes('تم التراجع')
+          };
+        });
       }
       return jsonResponse({ success: true, logs: logs });
+    }
+
+    if (action === 'delLog') {
+      const logId = e.parameter.logId;
+      if (logId) deleteLogById(logSheet, logId);
+      return jsonResponse({ success: true });
     }
     
     if (action === 'del') {
@@ -316,6 +329,12 @@ function doPost(e) {
 
     if (action === 'log') {
       if (body.log) appendLog(logSheet, body.log);
+      return jsonResponse({ success: true });
+    }
+
+    if (action === 'delLog') {
+      const logId = body.logId || (e && e.parameter ? e.parameter.logId : '');
+      if (logId) deleteLogById(logSheet, logId);
       return jsonResponse({ success: true });
     }
 
@@ -371,6 +390,17 @@ function deleteById(sheet, id) {
   const index = ids.indexOf(String(id));
   if (index !== -1) {
     sheet.deleteRow(index + 2);
+  }
+}
+
+function deleteLogById(logSheet, logId) {
+  if (!logSheet || !logId) return;
+  const lastRow = logSheet.getLastRow();
+  if (lastRow <= 1) return;
+  const ids = logSheet.getRange(2, 1, lastRow - 1, 1).getValues().map(r => String(r[0]));
+  const index = ids.indexOf(String(logId));
+  if (index !== -1) {
+    logSheet.deleteRow(index + 2);
   }
 }
 

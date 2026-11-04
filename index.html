@@ -1259,17 +1259,7 @@ async function loadFromGoogleSheets(silent=false){
 
     // مزامنة حالة سجل النشاط والتراجع من جوجل شيت
     try{
-      const logRes=await fetch(gsUrl+sep+'action=getLogs&_t='+Date.now());
-      const logJson=await logRes.json();
-      if(logJson.success&&Array.isArray(logJson.logs)){
-        logJson.logs.forEach(remoteLog=>{
-          const localLog=activityLogs.find(l=>l.logId===remoteLog.logId);
-          if(localLog){
-            localLog.isUndone=remoteLog.isUndone;
-          }
-        });
-        localStorage.setItem(LS_LOGS,JSON.stringify(activityLogs));
-      }
+      await syncActivityLogsFromSheet(true);
     }catch(logErr){}
   }catch(e){
     console.error('GS load error:',e);
@@ -1447,9 +1437,78 @@ function undoActivity(logId){
   }
 }
 
-function showHistorySheet(){
+async function syncActivityLogsFromSheet(silent = true){
+  if(!gsUrl) return;
+  try{
+    const sep = gsUrl.includes('?') ? '&' : '?';
+    const logRes = await fetch(gsUrl + sep + 'action=getLogs&_t=' + Date.now());
+    const logJson = await logRes.json();
+    if(logJson.success && Array.isArray(logJson.logs)){
+      const remoteLogs = logJson.logs;
+      const remoteIdMap = new Map(remoteLogs.map(l => [String(l.logId), l]));
+
+      // 1. حذف أي سجل محلي تم حذفه من الشيت، وتحديث حالة التراجع
+      let updatedLogs = [];
+      for(const local of activityLogs){
+        if(remoteIdMap.has(String(local.logId))){
+          const remote = remoteIdMap.get(String(local.logId));
+          local.isUndone = remote.isUndone;
+          updatedLogs.push(local);
+        }
+      }
+
+      // 2. إضافة أي سجلات موجودة في الشيت وغير مسجلة محلياً
+      const localIdSet = new Set(updatedLogs.map(l => String(l.logId)));
+      for(const remote of remoteLogs){
+        if(!localIdSet.has(String(remote.logId))){
+          let act = 'edit';
+          const actName = String(remote.actionName || '');
+          if(actName.includes('إضافة')) act = 'add';
+          else if(actName.includes('حذف')) act = 'del';
+
+          updatedLogs.push({
+            logId: remote.logId,
+            time: remote.time,
+            action: act,
+            actionName: remote.actionName,
+            targetKind: remote.targetKind,
+            targetTitle: remote.targetTitle,
+            targetId: remote.targetId,
+            before: remote.before,
+            after: remote.after,
+            isUndone: remote.isUndone
+          });
+        }
+      }
+
+      activityLogs = updatedLogs;
+      try{ localStorage.setItem(LS_LOGS, JSON.stringify(activityLogs)); }catch(e){}
+
+      const container = $('history_log_list');
+      if(container) renderHistoryList(container);
+      if(!silent) toast('تمت مزامنة سجل النشاط مع الشيت ✅');
+    }
+  }catch(e){
+    console.warn('Sync logs error:', e);
+    if(!silent) toast('تعذر مزامنة السجل من الشيت ⚠️');
+  }
+}
+
+function renderHistoryList(container){
+  if(!container) return;
   const rows = activityLogs;
-  const listHtml = rows.length ? rows.map(l => {
+  if(!rows.length){
+    container.innerHTML = `
+      <div class="empty">
+        <div style="font-size:42px;margin-bottom:8px">🕒</div>
+        <div style="font-weight:800;font-size:16px;color:var(--tx)">سجل النشاط فارغ</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">أي إضافة أو تعديل أو حذف هيتسجل هنا فوراً وتقدر تتراجع عنه</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = rows.map(l => {
     let actionBadge = '';
     if(l.action==='add') actionBadge = '<span class="badge avail">🟢 إضافة</span>';
     else if(l.action==='edit') actionBadge = '<span class="badge nego">🟡 تعديل</span>';
@@ -1463,7 +1522,10 @@ function showHistorySheet(){
             ${actionBadge}
             <span style="font-size:12px;font-weight:700;color:var(--tx-soft)">${esc(l.targetKind)}</span>
           </div>
-          <span style="font-size:11.5px;color:var(--mut);direction:ltr;font-weight:600">${esc(l.time)}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;color:var(--mut);direction:ltr;font-weight:600">${esc(l.time)}</span>
+            <button class="btn-del-log" data-logid="${esc(l.logId)}" title="حذف هذا النشاط من السجل" style="background:none;border:none;color:var(--mut);cursor:pointer;padding:2px 4px;font-size:13px;border-radius:4px" onmouseover="this.style.color='var(--no)'" onmouseout="this.style.color='var(--mut)'">🗑️</button>
+          </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;gap:8px">
           <div style="font-weight:800;font-size:15px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.targetTitle || 'عنصر')}</div>
@@ -1474,24 +1536,46 @@ function showHistorySheet(){
         </div>
       </div>
     `;
-  }).join('') : `
-    <div class="empty">
-      <div style="font-size:42px;margin-bottom:8px">🕒</div>
-      <div style="font-weight:800;font-size:16px;color:var(--tx)">سجل النشاط فارغ</div>
-      <div style="font-size:13px;color:var(--mut);margin-top:4px">أي إضافة أو تعديل أو حذف هيتسجل هنا فوراً وتقدر تتراجع عنه</div>
-    </div>
-  `;
+  }).join('');
 
+  container.querySelectorAll('.btn-undo').forEach(btn => {
+    btn.onclick = () => undoActivity(btn.dataset.logid);
+  });
+  container.querySelectorAll('.btn-del-log').forEach(btn => {
+    btn.onclick = () => {
+      if(confirm('هل تريد حذف هذا النشاط من السجل نهائياً؟')){
+        deleteActivityLog(btn.dataset.logid);
+      }
+    };
+  });
+}
+
+function deleteActivityLog(logId){
+  activityLogs = activityLogs.filter(l => l.logId !== logId);
+  try{ localStorage.setItem(LS_LOGS, JSON.stringify(activityLogs)); }catch(e){}
+  const container = $('history_log_list');
+  if(container) renderHistoryList(container);
+  toast('تم حذف النشاط من السجل 🗑️');
+
+  if(gsUrl){
+    syncToSheet({ action: 'delLog', logId: logId });
+  }
+}
+
+function showHistorySheet(){
   open(`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
       <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">
         ${ICONS.history} <span>سجل النشاط والتراجع</span>
       </h3>
-      <button id="h_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease" title="إغلاق">${ICONS.close}</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button id="h_sync" style="padding:4px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--pri);font-weight:700;font-size:11.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px" title="تحديث السجل من جوجل شيت">
+          ${ICONS.sync} <span>تحديث</span>
+        </button>
+        <button id="h_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease" title="إغلاق">${ICONS.close}</button>
+      </div>
     </div>
-    <div style="max-height:68vh;overflow-y:auto;padding:2px">
-      ${listHtml}
-    </div>
+    <div id="history_log_list" style="max-height:68vh;overflow-y:auto;padding:2px"></div>
     <div class="acts" style="margin-top:12px">
       <button class="btn" id="h_cl">${ICONS.close} <span>إغلاق</span></button>
     </div>
@@ -1499,9 +1583,12 @@ function showHistorySheet(){
 
   $('h_close').onclick = close;
   $('h_cl').onclick = close;
-  document.querySelectorAll('.btn-undo').forEach(btn => {
-    btn.onclick = () => undoActivity(btn.dataset.logid);
-  });
+  $('h_sync').onclick = () => syncActivityLogsFromSheet(false);
+
+  renderHistoryList($('history_log_list'));
+
+  // تحديث فوري مباشر من الشيت لمسح أي عناصر تم حذفها من الشيت
+  syncActivityLogsFromSheet(true);
 }
 
 $('btn_history').onclick = showHistorySheet;
