@@ -20,7 +20,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String APP_URL = "https://ayman3tta.github.io/madinaty-system/";
+    public static final String APP_URL = "https://ayman3tta.github.io/seen-madinaty/";
     private WebView webView;
     private SwipeRefreshLayout swipeRefresh;
     private ProgressBar progressBar;

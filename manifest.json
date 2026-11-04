@@ -1,6 +1,6 @@
 {
-  "name": "سيستم مدينتي – لإدارة العقارات",
-  "short_name": "مدينتي",
+  "name": "سين مدينتي – Seen Madinaty",
+  "short_name": "Seen Madinaty",
   "description": "نظام ويب وتطبيق لإدارة العقارات والمتابعات للوسطاء العقاريين في مدينتي",
   "start_url": "./index.html",
   "scope": "./",

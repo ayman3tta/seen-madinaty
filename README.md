@@ -5,7 +5,7 @@
 ---
 
 ### 🌐 رابط تشغيل السيستم مباشرة (Live Demo):
-👉 **[https://ayman3tta.github.io/madinaty-system/](https://ayman3tta.github.io/madinaty-system/)**
+👉 **[https://ayman3tta.github.io/seen-madinaty/](https://ayman3tta.github.io/seen-madinaty/)**
 
 ---
 
