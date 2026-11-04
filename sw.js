@@ -1,7 +1,7 @@
 // Service Worker for سيستم مدينتي
 // Network-First strategy ensures any code or style update reflects instantly when online!
 
-const CACHE_NAME = 'madinaty-v1';
+const CACHE_NAME = 'seen-madinaty-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
