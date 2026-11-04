@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
 <title>سيستم السمسار – مدينتي</title>
 <script src="data.js"></script>
 <script src="data/data.js"></script>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+:root{box-sizing:border-box;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#f5f6f8;--card:#fff;--tx:#1b1f24;--mut:#6b7480;--bd:#e3e6ea;--pri:#0f766e;--prit:#fff;--ok:#15803d;--warn:#b45309;--no:#b91c1c}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12161a;--card:#1b2127;--tx:#eceff2;--mut:#9aa4af;--bd:#2a323a;--pri:#2dd4bf;--prit:#06201d;--ok:#4ade80;--warn:#fbbf24;--no:#f87171}}
 *{box-sizing:border-box}html,body{margin:0}
 body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:16px;padding-bottom:90px}
 header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 12px 6px;z-index:5}
@@ -33,20 +33,12 @@ main{padding:6px 12px}
 .due-over{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
 .due-today{background:#fef3c7;color:#b45309;border-color:#fde68a}
 .due-soon{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
-@media (prefers-color-scheme:dark){
-:root:not([data-theme="light"]) .due-over{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
-:root:not([data-theme="light"]) .due-today{background:#451a03;color:#fcd34d;border-color:#78350f}
-:root:not([data-theme="light"]) .due-soon{background:#064e3b;color:#a7f3d0;border-color:#047857}
-}
 .acts{display:flex;gap:8px;margin-top:10px}
 .btn{flex:1;text-align:center;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-weight:700;text-decoration:none;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease;cursor:pointer}
 .btn.p{background:var(--pri);color:var(--prit);border-color:var(--pri)}
 .btn.wa{background:#25D366;color:#fff;border-color:#20ba5a;box-shadow:0 2px 6px rgba(37,211,102,.25)}
 .btn.wa:hover{background:#20ba5a;color:#fff}
 .btn.wa:active{background:#128c7e;color:#fff}
-@media (prefers-color-scheme:dark){
-:root:not([data-theme="light"]) .btn.wa{background:#25D366;color:#fff;border-color:#1ebe5d}
-}
 .empty{text-align:center;color:var(--mut);padding:40px 10px}
 .fab{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--pri);color:var(--prit);font-size:32px;box-shadow:0 4px 14px #0004;z-index:6}
 .sheet{position:fixed;inset:0;background:#0007;z-index:20;display:none;align-items:flex-end}
