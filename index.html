@@ -108,7 +108,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   box-shadow:0 0 0 3px var(--pri-surface);
   background:#fff;
 }
-#gear, #btn_history{
+#btn_history{
   flex:0 0 46px;
   height:46px;
   padding:0;
@@ -124,12 +124,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   transition:all .18s ease;
   box-shadow:var(--shadow-sm);
 }
-#gear:hover, #btn_history:hover{
+#btn_history:hover{
   background:#f1f5f9;
   border-color:var(--bd-hover);
   color:var(--tx);
 }
-#gear:active, #btn_history:active{transform:scale(0.95)}
+#btn_history:active{transform:scale(0.95)}
 
 .btn-undo{
   padding:6px 12px;
@@ -676,10 +676,7 @@ textarea{min-height:56px}
     <input id="q" class="search" type="search" placeholder="🔍 ابحث بالاسم أو العنوان أو الرقم">
     <button id="btn_history" title="سجل النشاط والتراجع">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-    </button>
-    <button id="gear" title="الإعدادات والمزامنة">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-      <span id="sync_dot" style="position:absolute;top:5px;left:5px;width:10px;height:10px;border-radius:50%;background:#10b981;display:none;border:2px solid var(--card)" title="جوجل شيت"></span>
+      <span id="sync_dot" style="position:absolute;top:5px;left:5px;width:9px;height:9px;border-radius:50%;background:#10b981;display:none;border:2px solid var(--card)" title="جوجل شيت"></span>
     </button>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -1281,7 +1278,7 @@ async function loadFromGoogleSheets(silent=false){
   }
 }
 
-$('gear').onclick=()=>{
+function openSettingsModal(){
   open(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
     <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">${ICONS.gear} <span>الإعدادات والمزامنة</span></h3>
     <button id="g_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease" title="إغلاق">${ICONS.close}</button>
@@ -1360,9 +1357,21 @@ $('gear').onclick=()=>{
   $('bk').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,1)],{type:'application/json'}));a.download='simsar-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
   $('im').onclick=()=>$('fi').click();
   $('fi').onchange=async e=>{try{const t=await e.target.files[0].text();const a=JSON.parse(t.slice(t.indexOf('['),t.lastIndexOf(']')+1));if(!confirm('استيراد '+a.length+' عنصر؟ (هيضاف/يتحدّث بنفس الـ id)'))return;a.forEach(x=>{if(!x.id)x.id=uid();const i=items.findIndex(y=>y.id==x.id);i<0?items.push(x):items[i]=x});save();close();render();toast('تم الاستيراد ✅')}catch(err){toast('الملف مش مظبوط')}};
-};
+}
 
-$('q').oninput=e=>{term=e.target.value;render()};
+if($('gear')) $('gear').onclick=openSettingsModal;
+
+$('q').oninput=e=>{
+  term=e.target.value;
+  if(term.trim()==='#settings'||term.trim()==='#admin'){
+    e.target.value='';
+    term='';
+    render();
+    openSettingsModal();
+    return;
+  }
+  render();
+};
 
 const LS='simsar_items',LD='simsar_deleted',LS_LOGS='simsar_activity_logs';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
