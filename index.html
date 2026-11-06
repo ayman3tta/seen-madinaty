@@ -108,9 +108,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   box-shadow:0 0 0 3px var(--pri-surface);
   background:#fff;
 }
-#btn_history{
-  flex:0 0 46px;
-  height:46px;
+.hdr-btn, #btn_history{
+  flex:0 0 44px;
+  height:44px;
   padding:0;
   border-radius:12px;
   border:1.5px solid var(--bd);
@@ -124,12 +124,17 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   transition:all .18s ease;
   box-shadow:var(--shadow-sm);
 }
-#btn_history:hover{
+.hdr-btn:hover, #btn_history:hover{
   background:#f1f5f9;
   border-color:var(--bd-hover);
   color:var(--tx);
 }
-#btn_history:active{transform:scale(0.95)}
+.hdr-btn:active, #btn_history:active{transform:scale(0.95)}
+.hdr-btn.active{
+  color:var(--pri);
+  border-color:var(--pri);
+  background:var(--pri-light);
+}
 
 .btn-undo{
   padding:6px 12px;
@@ -668,15 +673,184 @@ textarea{min-height:56px}
   margin-top:12px;
   z-index:10;
 }
+
+/* PIN Lock Screen */
+.pin-lock-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.pin-lock-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.98);
+}
+.pin-lock-box {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.pin-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+  margin-bottom: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+}
+.pin-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pin-title {
+  font-size: 21px;
+  font-weight: 900;
+  color: var(--tx);
+  margin: 0 0 5px;
+}
+.pin-sub {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--mut);
+  margin: 0 0 22px;
+  min-height: 20px;
+  transition: color 0.15s ease;
+}
+.pin-sub.error {
+  color: var(--no);
+  font-weight: 700;
+}
+.pin-dots {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 26px;
+}
+.pin-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--bd-hover);
+  background: transparent;
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pin-dot.filled {
+  background: var(--pri);
+  border-color: var(--pri);
+  transform: scale(1.15);
+  box-shadow: 0 0 10px var(--pri-surface);
+}
+.pin-dot.error {
+  background: var(--no);
+  border-color: var(--no);
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+}
+.pin-dots.shake {
+  animation: pinShake 0.4s ease;
+}
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-12px); }
+  40%, 80% { transform: translateX(12px); }
+}
+
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 18px;
+  width: 100%;
+  max-width: 270px;
+}
+.pin-key {
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bd);
+  background: var(--card);
+  color: var(--tx);
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: var(--shadow-sm);
+  touch-action: manipulation;
+}
+.pin-key:hover {
+  background: #f1f5f9;
+  border-color: var(--bd-hover);
+}
+.pin-key:active {
+  transform: scale(0.92);
+  background: var(--pri-light);
+  border-color: var(--pri);
+  color: var(--pri);
+}
+.pin-key.action {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--tx-soft);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.pin-key.action:hover {
+  background: #e2e8f0;
+}
+.pin-key.action:active {
+  transform: scale(0.92);
+}
+.pin-forgot-btn {
+  margin-top: 22px;
+  background: none;
+  border: none;
+  color: var(--mut);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.pin-forgot-btn:hover {
+  color: var(--pri);
+  background: var(--pri-light);
+}
 </style>
 </head>
 <body>
 <header>
-  <div style="display:flex;gap:8px;align-items:center">
+  <div style="display:flex;gap:7px;align-items:center">
     <input id="q" class="search" type="search" placeholder="🔍 ابحث بالاسم أو العنوان أو الرقم">
-    <button id="btn_history" title="سجل النشاط والتراجع">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-      <span id="sync_dot" style="position:absolute;top:5px;left:5px;width:9px;height:9px;border-radius:50%;background:#10b981;display:none;border:2px solid var(--card)" title="جوجل شيت"></span>
+    <button id="btn_lock" class="hdr-btn" title="قفل السيستم برمز PIN">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      <span id="pin_dot" style="position:absolute;top:5px;left:5px;width:8px;height:8px;border-radius:50%;background:#10b981;display:none;border:1.5px solid var(--card)" title="قفل PIN مفعل"></span>
+    </button>
+    <button id="btn_history" class="hdr-btn" title="سجل النشاط والتراجع">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      <span id="sync_dot" style="position:absolute;top:5px;left:5px;width:8px;height:8px;border-radius:50%;background:#10b981;display:none;border:1.5px solid var(--card)" title="جوجل شيت"></span>
+    </button>
+    <button id="gear" class="hdr-btn" title="الإعدادات والمزامنة">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
     </button>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -718,8 +892,45 @@ textarea{min-height:56px}
 <div class="sheet" id="sheet"><div class="panel" id="panel"></div></div>
 <div class="toast" id="toast"></div>
 
+<!-- شاشة قفل السيستم برمز PIN -->
+<div id="pin_screen" class="pin-lock-screen" style="display:none">
+  <div class="pin-lock-box">
+    <div class="pin-avatar">
+      <img src="favicon.png" alt="سين مدينتي">
+    </div>
+    <div class="pin-title">سين مدينتي</div>
+    <div class="pin-sub" id="pin_sub_text">أدخل رمز PIN لفتح السيستم</div>
+
+    <div class="pin-dots" id="pin_dots">
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+    </div>
+
+    <div class="pin-keypad">
+      <button type="button" class="pin-key" data-digit="1">1</button>
+      <button type="button" class="pin-key" data-digit="2">2</button>
+      <button type="button" class="pin-key" data-digit="3">3</button>
+      <button type="button" class="pin-key" data-digit="4">4</button>
+      <button type="button" class="pin-key" data-digit="5">5</button>
+      <button type="button" class="pin-key" data-digit="6">6</button>
+      <button type="button" class="pin-key" data-digit="7">7</button>
+      <button type="button" class="pin-key" data-digit="8">8</button>
+      <button type="button" class="pin-key" data-digit="9">9</button>
+      <button type="button" class="pin-key action" id="pin_btn_clear">مسح</button>
+      <button type="button" class="pin-key" data-digit="0">0</button>
+      <button type="button" class="pin-key action" id="pin_btn_backspace" title="حذف">⌫</button>
+    </div>
+
+    <button type="button" class="pin-forgot-btn" id="btn_pin_forgot">نسيت رمز PIN؟</button>
+  </div>
+</div>
+
 <script>
 const ICONS={
+  lock:`<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>`,
+  unlock:`<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5-2.28 0-4.27 1.54-4.84 3.75l1.93.54C10.5 3.85 11.66 3 13 3c1.66 0 3 1.34 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/></svg>`,
   history:`<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>`,
   undo:`<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`,
   rent:`<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" style="flex-shrink:0"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>`,
@@ -1268,11 +1479,447 @@ async function loadFromGoogleSheets(silent=false){
   }
 }
 
+// ==========================================
+// 🔐 نظام الحماية وقفل السيستم برمز PIN
+// ==========================================
+const LS_PIN = 'simsar_pin_config';
+
+function getPinConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_PIN)) || { enabled: false, autoLock: 'always' };
+  } catch(e) {
+    return { enabled: false, autoLock: 'always' };
+  }
+}
+
+function savePinConfig(cfg) {
+  try {
+    localStorage.setItem(LS_PIN, JSON.stringify(cfg));
+  } catch(e) {}
+  updatePinHeaderUI();
+}
+
+async function hashPin(pin, salt) {
+  const salted = 'madinaty_pin_' + salt + '_' + pin;
+  try {
+    if (window.crypto && window.crypto.subtle) {
+      const enc = new TextEncoder();
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(salted));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch(e) {}
+  let h = 0x811c9dc5;
+  for (let i = 0; i < salted.length; i++) {
+    h = Math.imul(h ^ salted.charCodeAt(i), 0x01000193);
+  }
+  return (h >>> 0).toString(16);
+}
+
+function generateSalt() {
+  return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+}
+
+async function checkPinMatch(enteredPin, config) {
+  if (!config || !config.enabled || !config.hash) return false;
+  const h = await hashPin(enteredPin, config.salt || '');
+  return h === config.hash;
+}
+
+let isSystemLocked = false;
+let currentEnteredPin = '';
+let isCheckingPin = false;
+let idleTimer = null;
+
+function updatePinHeaderUI() {
+  const cfg = getPinConfig();
+  const btnLock = $('btn_lock');
+  const dot = $('pin_dot');
+  if (btnLock) {
+    if (cfg.enabled) {
+      btnLock.title = 'قفل السيستم الآن (PIN مفعل)';
+      btnLock.classList.add('active');
+      if (dot) dot.style.display = 'block';
+    } else {
+      btnLock.title = 'تعيين رمز PIN لقفل السيستم';
+      btnLock.classList.remove('active');
+      if (dot) dot.style.display = 'none';
+    }
+  }
+}
+
+function lockSystem() {
+  const cfg = getPinConfig();
+  if (!cfg.enabled) return;
+  isSystemLocked = true;
+  currentEnteredPin = '';
+  isCheckingPin = false;
+  sessionStorage.removeItem('simsar_unlocked');
+  renderPinDots();
+  const screen = $('pin_screen');
+  if (screen) {
+    screen.style.display = 'flex';
+    screen.classList.remove('hidden');
+    $('pin_sub_text').textContent = 'أدخل رمز PIN لفتح السيستم';
+    $('pin_sub_text').className = 'pin-sub';
+    $('pin_sub_text').style.color = '';
+  }
+}
+
+function unlockSystem() {
+  isSystemLocked = false;
+  sessionStorage.setItem('simsar_unlocked', '1');
+  const screen = $('pin_screen');
+  if (screen) {
+    screen.classList.add('hidden');
+    setTimeout(() => {
+      screen.style.display = 'none';
+      currentEnteredPin = '';
+      renderPinDots();
+    }, 220);
+  }
+  toast('تم فتح السيستم بنجاح 🔓', 1500);
+  resetIdleTimer();
+}
+
+function checkInitialPinLock() {
+  const cfg = getPinConfig();
+  updatePinHeaderUI();
+  if (!cfg.enabled) {
+    const screen = $('pin_screen');
+    if (screen) screen.style.display = 'none';
+    isSystemLocked = false;
+    return;
+  }
+  const sessionUnlocked = sessionStorage.getItem('simsar_unlocked') === '1';
+  if (cfg.autoLock === 'idle5' && sessionUnlocked) {
+    const screen = $('pin_screen');
+    if (screen) screen.style.display = 'none';
+    isSystemLocked = false;
+    resetIdleTimer();
+  } else {
+    lockSystem();
+  }
+}
+
+function renderPinDots(isError = false) {
+  const dots = document.querySelectorAll('#pin_dots .pin-dot');
+  dots.forEach((dot, idx) => {
+    if (isError) {
+      dot.className = 'pin-dot error filled';
+    } else if (idx < currentEnteredPin.length) {
+      dot.className = 'pin-dot filled';
+    } else {
+      dot.className = 'pin-dot';
+    }
+  });
+}
+
+function onPinDigit(digit) {
+  if (!isSystemLocked || isCheckingPin) return;
+  if (currentEnteredPin.length >= 4) return;
+  currentEnteredPin += digit;
+  try { if (navigator.vibrate) navigator.vibrate(25); } catch(e) {}
+  renderPinDots();
+  if (currentEnteredPin.length === 4) {
+    handlePinSubmit();
+  }
+}
+
+function onPinBackspace() {
+  if (!isSystemLocked || isCheckingPin) return;
+  if (currentEnteredPin.length > 0) {
+    currentEnteredPin = currentEnteredPin.slice(0, -1);
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch(e) {}
+    renderPinDots();
+  }
+}
+
+function onPinClear() {
+  if (!isSystemLocked || isCheckingPin) return;
+  currentEnteredPin = '';
+  renderPinDots();
+}
+
+async function handlePinSubmit() {
+  isCheckingPin = true;
+  const cfg = getPinConfig();
+  const isMatch = await checkPinMatch(currentEnteredPin, cfg);
+
+  if (isMatch) {
+    try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch(e) {}
+    $('pin_sub_text').textContent = 'رمز صحيح! جاري فتح السيستم... ✅';
+    $('pin_sub_text').className = 'pin-sub';
+    $('pin_sub_text').style.color = 'var(--ok)';
+    setTimeout(() => {
+      unlockSystem();
+      isCheckingPin = false;
+    }, 250);
+  } else {
+    try { if (navigator.vibrate) navigator.vibrate(120); } catch(e) {}
+    renderPinDots(true);
+    const dotsContainer = $('pin_dots');
+    dotsContainer.classList.add('shake');
+    $('pin_sub_text').textContent = 'رمز PIN غير صحيح، حاول مرة أخرى ❌';
+    $('pin_sub_text').className = 'pin-sub error';
+    setTimeout(() => {
+      dotsContainer.classList.remove('shake');
+      currentEnteredPin = '';
+      renderPinDots(false);
+      isCheckingPin = false;
+    }, 550);
+  }
+}
+
+function handleForgotPin() {
+  const cfg = getPinConfig();
+  const hintMsg = cfg.hint
+    ? `<div style="background:var(--warn-bg);border:1px solid var(--warn-bd);color:var(--warn);padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:13.5px;text-align:right">💡 <strong>تلميح الرمز الذي قمت بكتابته:</strong><br><span style="color:var(--tx);font-weight:700">${esc(cfg.hint)}</span></div>`
+    : '';
+
+  open(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+      <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">
+        ❓ <span>استرجاع / إعادة ضبط رمز PIN</span>
+      </h3>
+      <button id="forgot_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer" title="إغلاق">${ICONS.close}</button>
+    </div>
+    ${hintMsg}
+    <div style="font-size:13.5px;color:var(--tx-soft);line-height:1.6;margin-bottom:14px;text-align:right">
+      إذا نسيت رمز PIN تماماً، يمكنك إعادة تعيين الرمز وإلغاء القفل. <strong>بيانات الشقق والعملاء محفوظة ولن يتأثر أي شيء منها</strong>.
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="text-align:right">لتأكيد إعادة التعيين، اكتب كلمة <strong>إلغاء</strong> في الحقل التالي:</label>
+      <input id="forgot_confirm_inp" type="text" placeholder="اكتب: إلغاء" style="text-align:center;font-weight:700">
+    </div>
+    <div class="acts">
+      <button class="btn danger" id="forgot_btn_reset" style="flex:1.5">🔄 <span>إعادة تعيين الرمز وفتح السيستم</span></button>
+      <button class="btn" id="forgot_btn_cancel" style="flex:1">رجوع</button>
+    </div>
+  `);
+
+  $('forgot_close').onclick = close;
+  $('forgot_btn_cancel').onclick = close;
+  $('forgot_btn_reset').onclick = () => {
+    const val = ($('forgot_confirm_inp').value || '').trim().toLowerCase();
+    if (val !== 'إلغاء' && val !== 'الغاء' && val !== 'reset') {
+      return toast('يرجى كتابة كلمة "إلغاء" للتأكيد ⚠️');
+    }
+    savePinConfig({ enabled: false, hash: '', salt: '', hint: '', autoLock: 'always' });
+    close();
+    unlockSystem();
+    toast('تمت إعادة ضبط رمز PIN بنجاح ✅');
+  };
+}
+
+function openPinSetupModal(isChange = false) {
+  const cfg = getPinConfig();
+  open(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+      <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">
+        ${ICONS.lock} <span>${isChange ? 'تغيير رمز PIN' : 'تعيين رمز PIN جديد'}</span>
+      </h3>
+      <button id="pin_modal_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer" title="إغلاق">${ICONS.close}</button>
+    </div>
+    <div style="font-size:13.5px;color:var(--tx-soft);line-height:1.6;margin-bottom:12px;text-align:right">
+      ${isChange ? 'أدخل الرمز الحالي أولاً ثم اختر الرمز الجديد المكون من 4 أرقام.' : 'اختر رمز أمان سري مكون من 4 أرقام لحماية السيستم وبياناتك.'}
+    </div>
+
+    ${isChange ? `
+      <div style="margin-bottom:10px">
+        <label>رمز PIN الحالي (4 أرقام):</label>
+        <input id="inp_pin_old" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="text-align:center;letter-spacing:6px;font-size:20px;font-weight:800">
+      </div>
+    ` : ''}
+
+    <div style="margin-bottom:10px">
+      <label>رمز PIN الجديد (4 أرقام):</label>
+      <input id="inp_pin_new" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="text-align:center;letter-spacing:6px;font-size:20px;font-weight:800">
+    </div>
+
+    <div style="margin-bottom:10px">
+      <label>تأكيد رمز PIN الجديد:</label>
+      <input id="inp_pin_conf" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="text-align:center;letter-spacing:6px;font-size:20px;font-weight:800">
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label>تلميح للرمز (اختياري - يساعدك إذا نسيته):</label>
+      <input id="inp_pin_hint" type="text" placeholder="مثال: سنة ميلادي، رقم مفضل..." value="${esc(cfg.hint || '')}">
+    </div>
+
+    <div class="acts" style="margin-top:14px">
+      <button class="btn p" id="btn_save_new_pin" style="flex:1.5">💾 <span>حفظ الرمز وتفعيل القفل</span></button>
+      <button class="btn" id="btn_cancel_pin" style="flex:1">إلغاء</button>
+    </div>
+  `);
+
+  $('pin_modal_close').onclick = close;
+  $('btn_cancel_pin').onclick = close;
+
+  $('btn_save_new_pin').onclick = async () => {
+    const newPin = ($('inp_pin_new').value || '').trim();
+    const confPin = ($('inp_pin_conf').value || '').trim();
+    const hint = ($('inp_pin_hint').value || '').trim();
+
+    if (isChange) {
+      const oldPin = ($('inp_pin_old').value || '').trim();
+      if (!oldPin) return toast('أدخل رمز PIN الحالي ⚠️');
+      const oldMatch = await checkPinMatch(oldPin, cfg);
+      if (!oldMatch) return toast('رمز PIN الحالي غير صحيح ❌');
+    }
+
+    if (!/^\d{4}$/.test(newPin)) {
+      return toast('يجب أن يتكون رمز PIN من 4 أرقام بالضبط ⚠️');
+    }
+    if (newPin !== confPin) {
+      return toast('رمز التأكيد غير متطابق ❌');
+    }
+
+    const salt = generateSalt();
+    const hash = await hashPin(newPin, salt);
+    const newCfg = {
+      enabled: true,
+      hash: hash,
+      salt: salt,
+      hint: hint,
+      autoLock: cfg.autoLock || 'always'
+    };
+
+    savePinConfig(newCfg);
+    close();
+    toast('تم تفعيل رمز PIN بنجاح 🔒');
+    updatePinHeaderUI();
+  };
+}
+
+function openDisablePinModal() {
+  const cfg = getPinConfig();
+  open(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+      <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">
+        🔓 <span>إلغاء قفل PIN</span>
+      </h3>
+      <button id="dis_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer" title="إغلاق">${ICONS.close}</button>
+    </div>
+    <div style="font-size:13.5px;color:var(--tx-soft);line-height:1.6;margin-bottom:12px;text-align:right">
+      لإلغاء قفل السيستم برمز PIN، يرجى إدخال رمز PIN الحالي للتأكيد:
+    </div>
+    <div style="margin-bottom:14px">
+      <label>رمز PIN الحالي (4 أرقام):</label>
+      <input id="inp_dis_pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="text-align:center;letter-spacing:6px;font-size:20px;font-weight:800">
+    </div>
+    <div class="acts">
+      <button class="btn danger" id="btn_confirm_dis" style="flex:1.5">🔓 <span>تأكيد إلغاء القفل</span></button>
+      <button class="btn" id="btn_cancel_dis" style="flex:1">تراجع</button>
+    </div>
+  `);
+
+  $('dis_close').onclick = close;
+  $('btn_cancel_dis').onclick = close;
+
+  $('btn_confirm_dis').onclick = async () => {
+    const entered = ($('inp_dis_pin').value || '').trim();
+    if (!entered) return toast('أدخل رمز PIN الحالي ⚠️');
+    const isMatch = await checkPinMatch(entered, cfg);
+    if (!isMatch) return toast('رمز PIN غير صحيح ❌');
+
+    savePinConfig({ enabled: false, hash: '', salt: '', hint: '', autoLock: 'always' });
+    close();
+    toast('تم إلغاء قفل PIN بنجاح 🔓');
+    updatePinHeaderUI();
+  };
+}
+
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
+  const cfg = getPinConfig();
+  if (cfg.enabled && cfg.autoLock === 'idle5') {
+    idleTimer = setTimeout(() => {
+      if (!isSystemLocked) {
+        lockSystem();
+        toast('تم قفل السيستم تلقائياً لعدم النشاط 🔒');
+      }
+    }, 5 * 60 * 1000);
+  }
+}
+
+['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+  window.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+
+// Keypad Button Events
+document.querySelectorAll('#pin_screen .pin-key[data-digit]').forEach(btn => {
+  btn.onclick = () => onPinDigit(btn.dataset.digit);
+});
+if ($('pin_btn_backspace')) $('pin_btn_backspace').onclick = onPinBackspace;
+if ($('pin_btn_clear')) $('pin_btn_clear').onclick = onPinClear;
+if ($('btn_pin_forgot')) $('btn_pin_forgot').onclick = handleForgotPin;
+
+// Physical Keyboard Event
+window.addEventListener('keydown', e => {
+  if (!isSystemLocked) return;
+  if (e.key >= '0' && e.key <= '9') {
+    e.preventDefault();
+    onPinDigit(e.key);
+  } else if (e.key === 'Backspace') {
+    e.preventDefault();
+    onPinBackspace();
+  } else if (e.key === 'Escape' || e.key === 'Delete') {
+    e.preventDefault();
+    onPinClear();
+  }
+});
+
+if ($('btn_lock')) {
+  $('btn_lock').onclick = () => {
+    const cfg = getPinConfig();
+    if (cfg.enabled) {
+      lockSystem();
+      toast('تم قفل السيستم 🔒');
+    } else {
+      openPinSetupModal(false);
+    }
+  };
+}
+
 function openSettingsModal(){
+  const pinCfg = getPinConfig();
+  const isPinOn = pinCfg.enabled;
+
   open(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
     <h3 style="margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:6px;color:var(--tx)">${ICONS.gear} <span>الإعدادات والمزامنة</span></h3>
     <button id="g_close" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease" title="إغلاق">${ICONS.close}</button>
   </div>
+
+  <div style="background:var(--card);border:1.5px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow-sm)">
+    <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:6px;color:var(--tx)">${ICONS.lock} <span>قفل الأمان (رمز PIN)</span></span>
+      <span style="font-size:12px;font-weight:700;color:${isPinOn?'var(--ok)':'var(--mut)'}">${isPinOn?'🟢 مفعل':'⚪ غير مفعل'}</span>
+    </div>
+    <div class="sm" style="text-align:right;margin:0 0 10px;line-height:1.6">
+      ${isPinOn ? 'السيستم محمي برمز PIN لمنع أي شخص من فتح بيانات الشقق والعملاء بدون إذنك.' : 'عيّن رمز PIN سري لحماية بيانات السيستم والشقق والعملاء من المتطفلين.'}
+    </div>
+    ${isPinOn ? `
+      <div class="acts" style="margin-bottom:8px">
+        <button class="btn" id="s_change_pin">🔄 <span>تغيير الرمز</span></button>
+        <button class="btn danger" id="s_dis_pin">🔓 <span>إلغاء القفل</span></button>
+      </div>
+      <div class="acts">
+        <button class="btn p" id="s_lock_now">🔒 <span>قفل السيستم الآن</span></button>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--bd)">
+        <div class="sm" style="font-weight:700;margin-bottom:6px">⏱️ توقيت طلب الرمز:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button type="button" class="f-seg-btn ${pinCfg.autoLock!=='idle5'?'on avail':''}" id="s_lock_mode_open">عند كل فتح للموقع</button>
+          <button type="button" class="f-seg-btn ${pinCfg.autoLock==='idle5'?'on avail':''}" id="s_lock_mode_idle">بعد 5 دقائق خمول</button>
+        </div>
+      </div>
+    ` : `
+      <div class="acts">
+        <button class="btn p" id="s_setup_pin">🔐 <span>تعيين رمز PIN جديد</span></button>
+      </div>
+    `}
+  </div>
+
   <div style="background:var(--card);border:1.5px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow-sm)">
     <div style="font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
       <span style="display:flex;align-items:center;gap:6px;color:var(--tx)">${ICONS.cloudUp} <span>الربط مع Google Sheets</span></span>
@@ -1311,6 +1958,26 @@ function openSettingsModal(){
 
   $('g_close').onclick=close;
   $('cl').onclick=close;
+
+  if($('s_setup_pin')) $('s_setup_pin').onclick=()=>{ close(); openPinSetupModal(false); };
+  if($('s_change_pin')) $('s_change_pin').onclick=()=>{ close(); openPinSetupModal(true); };
+  if($('s_dis_pin')) $('s_dis_pin').onclick=()=>{ close(); openDisablePinModal(); };
+  if($('s_lock_now')) $('s_lock_now').onclick=()=>{ close(); lockSystem(); };
+  if($('s_lock_mode_open')) $('s_lock_mode_open').onclick=()=>{
+    const cfg=getPinConfig();
+    cfg.autoLock='always';
+    savePinConfig(cfg);
+    toast('سيتم طلب رمز PIN عند كل فتح للموقع 🔒');
+    openSettingsModal();
+  };
+  if($('s_lock_mode_idle')) $('s_lock_mode_idle').onclick=()=>{
+    const cfg=getPinConfig();
+    cfg.autoLock='idle5';
+    savePinConfig(cfg);
+    toast('سيتم قفل السيستم بعد 5 دقائق من الخمول ⏱️');
+    openSettingsModal();
+  };
+
   $('btn_modal_install').onclick=()=>{
     close();
     promptInstallApp();
@@ -1628,6 +2295,7 @@ const gone=new Set(ld(LD,[]));
 save();loaded=true;render();
 updateSyncStatus(gsUrl?'online':'local');
 if(gsUrl)loadFromGoogleSheets(true);
+checkInitialPinLock();
 
 // PWA & Service Worker
 let deferredPrompt = null;
