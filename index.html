@@ -1660,14 +1660,12 @@ function unlockSystem() {
   sessionStorage.setItem('simsar_unlocked', '1');
   const screen = $('pin_screen');
   if (screen) {
+    screen.style.display = 'none';
     screen.classList.add('hidden');
-    setTimeout(() => {
-      screen.style.display = 'none';
-      currentEnteredPin = '';
-      renderPinDots();
-    }, 220);
+    currentEnteredPin = '';
+    renderPinDots();
   }
-  toast('تم فتح السيستم بنجاح 🔓', 1500);
+  toast('تم فتح السيستم بنجاح 🔓', 1200);
   resetIdleTimer();
 }
 
@@ -1734,7 +1732,11 @@ async function handlePinSubmit() {
   if (isCheckingPin) return;
   isCheckingPin = true;
 
-  if (initialSyncPromise && gsUrl) {
+  let cfg = getPinConfig();
+  let isMatch = await checkPinMatch(currentEnteredPin, cfg);
+
+  // إذا لم يطابق الرمز وكانت أول مزامنة مع الشيت لا تزال جارية، ننتظرها لحظياً تحسباً لتغيير الرمز
+  if (!isMatch && initialSyncPromise && gsUrl) {
     const subText = $('pin_sub_text');
     if (subText) {
       subText.textContent = 'جاري التحقق من أحدث رمز... ⏳';
@@ -1744,23 +1746,17 @@ async function handlePinSubmit() {
     try {
       await Promise.race([
         initialSyncPromise,
-        new Promise(resolve => setTimeout(resolve, 2500))
+        new Promise(resolve => setTimeout(resolve, 1800))
       ]);
+      cfg = getPinConfig();
+      isMatch = await checkPinMatch(currentEnteredPin, cfg);
     } catch(e) {}
   }
 
-  const cfg = getPinConfig();
-  const isMatch = await checkPinMatch(currentEnteredPin, cfg);
-
   if (isMatch) {
-    try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch(e) {}
-    $('pin_sub_text').textContent = 'رمز صحيح! جاري فتح السيستم... ✅';
-    $('pin_sub_text').className = 'pin-sub';
-    $('pin_sub_text').style.color = 'var(--ok)';
-    setTimeout(() => {
-      unlockSystem();
-      isCheckingPin = false;
-    }, 250);
+    try { if (navigator.vibrate) navigator.vibrate(25); } catch(e) {}
+    unlockSystem();
+    isCheckingPin = false;
   } else {
     try { if (navigator.vibrate) navigator.vibrate(120); } catch(e) {}
     renderPinDots(true);
@@ -1773,7 +1769,7 @@ async function handlePinSubmit() {
       currentEnteredPin = '';
       renderPinDots(false);
       isCheckingPin = false;
-    }, 550);
+    }, 450);
   }
 }
 
