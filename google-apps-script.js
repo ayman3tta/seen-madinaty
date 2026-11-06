@@ -177,23 +177,35 @@ function undoRow(logSheet, dataSheet, rowNum) {
 }
 
 /**
- * عند تعديل الشيت يدوياً (تفعيل مربع اختيار التراجع)
+ * عند تعديل الشيت يدوياً (تفعيل مربع اختيار التراجع أو تعديل الـ PIN)
  */
 function onEdit(e) {
   try {
     if (!e || !e.range) return;
     const sheet = e.range.getSheet();
-    if (sheet.getName() !== 'سجل_النشاط') return;
-
+    const sheetName = sheet.getName();
     const col = e.range.getColumn();
     const row = e.range.getRow();
 
-    // العمود 9 هو مربع الاختيار الخاص بالتراجع
-    if (col === 9 && row > 1 && e.value === 'TRUE') {
+    // 1. العمود 9 هو مربع الاختيار الخاص بالتراجع في سجل النشاط
+    if (sheetName === 'سجل_النشاط' && col === 9 && row > 1 && e.value === 'TRUE') {
       const dataSheet = getSheet();
       const done = undoRow(sheet, dataSheet, row);
       if (done) {
         SpreadsheetApp.getActiveSpreadsheet().toast('تم التراجع عن العملية واستعادة البيانات بنجاح ✅', 'تراجع');
+      }
+      return;
+    }
+
+    // 2. تعديل الـ PIN يدوياً من سطر _config_pin في شيت البيانات
+    if (sheetName === 'البيانات' && row > 1) {
+      const idVal = String(sheet.getRange(row, 1).getValue()).trim();
+      if (idVal === '_config_pin') {
+        const editedVal = String(e.value || sheet.getRange(row, col).getValue()).trim();
+        if (/^\d{4}$/.test(editedVal)) {
+          setSystemPinInSheet(editedVal);
+          SpreadsheetApp.getActiveSpreadsheet().toast('تم تغيير رمز PIN للسيستم إلى (' + editedVal + ') بنجاح 🔒', 'قفل السيستم');
+        }
       }
     }
   } catch (err) {
@@ -208,12 +220,90 @@ function onOpen() {
   try {
     SpreadsheetApp.getUi()
       .createMenu('سيستم مدينتي 🏠')
+      .addItem('🔐 تغيير رمز PIN لفتح السيستم', 'menuChangePin')
+      .addItem('🔓 إيقاف قفل PIN', 'menuDisablePin')
+      .addSeparator()
       .addItem('↩️ تراجع عن آخر نشاط (Undo)', 'menuUndoLast')
       .addItem('📋 فحص سجل النشاط', 'menuCheckLogs')
       .addToUi();
   } catch (e) {
     console.log(e);
   }
+}
+
+function menuChangePin() {
+  const ui = SpreadsheetApp.getUi();
+  const res = ui.prompt('🔐 تغيير رمز PIN للسيستم', 'أدخل رمز PIN الجديد المكون من 4 أرقام لفتح الموقع والتطبيق على جميع الهواتف:', ui.ButtonSet.OK_CANCEL);
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  const newPin = String(res.getResponseText() || '').trim();
+  if (!/^\d{4}$/.test(newPin)) {
+    ui.alert('⚠️ خطأ: يجب أن يتكون رمز PIN من 4 أرقام بالضبط (مثال: 1234).');
+    return;
+  }
+  setSystemPinInSheet(newPin);
+  ui.alert('✅ تم بنجاح!', 'تم تعيين رمز PIN الجديد (' + newPin + ') بنجاح.\nسيتم قفل السيستم ومطالبة الجميع بهذا الرمز فوراً.', ui.ButtonSet.OK);
+}
+
+function menuDisablePin() {
+  const ui = SpreadsheetApp.getUi();
+  const res = ui.alert('🔓 إيقاف قفل PIN', 'هل أنت متأكد من إلغاء قفل PIN ليفتح السيستم للجميع بدون رمز سري؟', ui.ButtonSet.YES_NO);
+  if (res !== ui.Button.YES) return;
+  disableSystemPinInSheet();
+  ui.alert('✅ تم إلغاء قفل PIN بنجاح.');
+}
+
+function setSystemPinInSheet(pin) {
+  const sheet = getSheet();
+  const salt = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
+  const saltedStr = 'madinaty_pin_' + salt + '_' + pin;
+  const rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, saltedStr, Utilities.Charset.UTF_8);
+  let hashHex = '';
+  for (let i = 0; i < rawHash.length; i++) {
+    let b = rawHash[i];
+    if (b < 0) b += 256;
+    let hex = b.toString(16);
+    if (hex.length === 1) hex = '0' + hex;
+    hashHex += hex;
+  }
+
+  const pinConfig = {
+    enabled: true,
+    hash: hashHex,
+    salt: salt,
+    pin: pin,
+    autoLock: 'always'
+  };
+
+  const item = {
+    id: '_config_pin',
+    kind: '_config',
+    addr: '🔐 رمز حماية PIN الموحد للسيستم',
+    price: pin,
+    notes: JSON.stringify(pinConfig)
+  };
+
+  saveOrUpdate(sheet, item);
+}
+
+function disableSystemPinInSheet() {
+  const sheet = getSheet();
+  const pinConfig = {
+    enabled: false,
+    hash: '',
+    salt: '',
+    pin: '',
+    autoLock: 'always'
+  };
+
+  const item = {
+    id: '_config_pin',
+    kind: '_config',
+    addr: '🔐 رمز حماية PIN (معطل)',
+    price: '',
+    notes: JSON.stringify(pinConfig)
+  };
+
+  saveOrUpdate(sheet, item);
 }
 
 function menuUndoLast() {

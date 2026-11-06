@@ -1463,11 +1463,25 @@ async function loadFromGoogleSheets(silent=false){
     if(json.success&&Array.isArray(json.data)){
       // مزامنة رمز PIN الموحد من جوجل شيت لجميع الهواتف
       const pinItem = json.data.find(x => x.id === '_config_pin');
-      if (pinItem && pinItem.notes) {
-        try {
-          const remotePin = JSON.parse(pinItem.notes);
+      if (pinItem) {
+        let remotePin = null;
+        if (pinItem.notes) {
+          try { remotePin = JSON.parse(pinItem.notes); } catch(e) {}
+        }
+        if (!remotePin || typeof remotePin !== 'object') {
+          remotePin = { enabled: true };
+        }
+        // قراءة الرمز المباشر المكون من 4 أرقام إذا تم تعديله من شيت جوجل
+        const directDigits = [pinItem.price, pinItem.phone, pinItem.notes]
+          .map(v => String(v || '').trim())
+          .find(v => /^\d{4}$/.test(v));
+        if (directDigits) {
+          remotePin.pin = directDigits;
+          remotePin.enabled = true;
+        }
+        if (typeof remotePin.enabled === 'boolean') {
           applyRemotePinConfig(remotePin);
-        } catch(e) {}
+        }
       } else {
         // لو الـ PIN مفعل محلياً وغير موجود بالشيت، يتم رفعه للشيت فوراً ليقفل على الكل
         const localCfg = getPinConfig();
@@ -1534,6 +1548,7 @@ function savePinConfig(cfg, syncRemote = true) {
         id: '_config_pin',
         kind: '_config',
         addr: '🔐 رمز حماية PIN الموحد للسيستم',
+        price: cfg.pin || cfg.price || '',
         notes: JSON.stringify(cfg)
       }
     });
@@ -1545,6 +1560,8 @@ function applyRemotePinConfig(remotePin) {
   const localPin = getPinConfig();
   const changed = remotePin.enabled !== localPin.enabled ||
                   remotePin.hash !== localPin.hash ||
+                  remotePin.pin !== localPin.pin ||
+                  remotePin.price !== localPin.price ||
                   remotePin.salt !== localPin.salt ||
                   remotePin.autoLock !== localPin.autoLock;
 
@@ -1579,9 +1596,16 @@ function generateSalt() {
 }
 
 async function checkPinMatch(enteredPin, config) {
-  if (!config || !config.enabled || !config.hash) return false;
-  const h = await hashPin(enteredPin, config.salt || '');
-  return h === config.hash;
+  if (!config || !config.enabled) return false;
+  // 1. فحص إذا تم تعيين الرمز كـ 4 أرقام مباشرة من شيت جوجل
+  if (config.pin && String(config.pin).trim() === enteredPin) return true;
+  if (config.price && String(config.price).trim() === enteredPin) return true;
+  // 2. فحص الهاش المشفر
+  if (config.hash) {
+    const h = await hashPin(enteredPin, config.salt || '');
+    if (h === config.hash) return true;
+  }
+  return false;
 }
 
 let isSystemLocked = true;
