@@ -703,9 +703,9 @@ textarea{min-height:56px}
   text-align: center;
 }
 .pin-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
   margin-bottom: 14px;
   overflow: hidden;
@@ -719,6 +719,8 @@ textarea{min-height:56px}
   height: 100%;
   object-fit: cover;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 .pin-title {
   font-size: 21px;
@@ -896,7 +898,7 @@ textarea{min-height:56px}
 <div id="pin_screen" class="pin-lock-screen" style="display:none">
   <div class="pin-lock-box">
     <div class="pin-avatar">
-      <img src="favicon.png" alt="سين مدينتي">
+      <img src="icons/icon-512.png" width="76" height="76" alt="سين مدينتي">
     </div>
     <div class="pin-title">سين مدينتي</div>
     <div class="pin-sub" id="pin_sub_text">أدخل رمز PIN لفتح السيستم</div>
