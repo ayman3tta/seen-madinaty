@@ -1476,6 +1476,10 @@ async function loadFromGoogleSheets(silent=false){
           .map(v => String(v || '').trim())
           .find(v => /^\d{4}$/.test(v));
         if (directDigits) {
+          if (remotePin.pin && remotePin.pin !== directDigits) {
+            remotePin.hash = '';
+            remotePin.salt = '';
+          }
           remotePin.pin = directDigits;
           remotePin.enabled = true;
         }
@@ -1516,11 +1520,12 @@ async function loadFromGoogleSheets(silent=false){
 // 🔐 نظام الحماية وقفل السيستم برمز PIN
 // ==========================================
 const LS_PIN = 'simsar_pin_config';
+let initialSyncPromise = null;
 const DEFAULT_PIN_CONFIG = {
   enabled: true,
-  hash: "3d903823911f4b8273c7f387d883f9808b6053343e5a30359791ee55cd304aea",
-  salt: "y1si2o7rmw54a4kc",
-  hint: "زيرو",
+  pin: "2502",
+  hash: "7e90450ee8dbfc59ea024b328e8da5aa91b04f9b125ec2704d8750649e63428f",
+  salt: "1f88e2aa792c4c80",
   autoLock: "always"
 };
 
@@ -1597,13 +1602,15 @@ function generateSalt() {
 
 async function checkPinMatch(enteredPin, config) {
   if (!config || !config.enabled) return false;
-  // 1. فحص إذا تم تعيين الرمز كـ 4 أرقام مباشرة من شيت جوجل
-  if (config.pin && String(config.pin).trim() === enteredPin) return true;
-  if (config.price && String(config.price).trim() === enteredPin) return true;
-  // 2. فحص الهاش المشفر
+  // 1. إذا تم تحديد pin صريح (4 أرقام من الشيت أو الإعدادات)، فهو المرجع الحصري المعتمد
+  const explicitPin = config.pin || config.price;
+  if (explicitPin && /^\d{4}$/.test(String(explicitPin).trim())) {
+    return String(explicitPin).trim() === enteredPin;
+  }
+  // 2. فحص الهاش المشفر فقط في حال عدم وجود رمز صريح
   if (config.hash) {
     const h = await hashPin(enteredPin, config.salt || '');
-    if (h === config.hash) return true;
+    return h === config.hash;
   }
   return false;
 }
@@ -1724,7 +1731,24 @@ function onPinClear() {
 }
 
 async function handlePinSubmit() {
+  if (isCheckingPin) return;
   isCheckingPin = true;
+
+  if (initialSyncPromise && gsUrl) {
+    const subText = $('pin_sub_text');
+    if (subText) {
+      subText.textContent = 'جاري التحقق من أحدث رمز... ⏳';
+      subText.className = 'pin-sub';
+      subText.style.color = 'var(--pri)';
+    }
+    try {
+      await Promise.race([
+        initialSyncPromise,
+        new Promise(resolve => setTimeout(resolve, 2500))
+      ]);
+    } catch(e) {}
+  }
+
   const cfg = getPinConfig();
   const isMatch = await checkPinMatch(currentEnteredPin, cfg);
 
@@ -2393,7 +2417,11 @@ const gone=new Set(ld(LD,[]));
 (window.SIMSAR_DATA||[]).forEach(x=>{if(x.id&&!gone.has(x.id)&&!items.some(y=>y.id==x.id))items.push(x)});
 save();loaded=true;render();
 updateSyncStatus(gsUrl?'online':'local');
-if(gsUrl)loadFromGoogleSheets(true);
+if(gsUrl) {
+  initialSyncPromise = loadFromGoogleSheets(true).finally(() => {
+    initialSyncPromise = null;
+  });
+}
 checkInitialPinLock();
 
 // PWA & Service Worker
