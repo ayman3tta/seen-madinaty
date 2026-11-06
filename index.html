@@ -898,7 +898,7 @@ textarea{min-height:56px}
 <div class="toast" id="toast"></div>
 
 <!-- شاشة قفل السيستم برمز PIN -->
-<div id="pin_screen" class="pin-lock-screen" style="display:none">
+<div id="pin_screen" class="pin-lock-screen">
   <div class="pin-lock-box">
     <div class="pin-avatar">
       <img src="icons/icon-512.png" width="76" height="76" alt="سين مدينتي">
@@ -1502,12 +1502,21 @@ async function loadFromGoogleSheets(silent=false){
 // 🔐 نظام الحماية وقفل السيستم برمز PIN
 // ==========================================
 const LS_PIN = 'simsar_pin_config';
+const DEFAULT_PIN_CONFIG = {
+  enabled: true,
+  hash: "3d903823911f4b8273c7f387d883f9808b6053343e5a30359791ee55cd304aea",
+  salt: "y1si2o7rmw54a4kc",
+  hint: "زيرو",
+  autoLock: "always"
+};
 
 function getPinConfig() {
   try {
-    return JSON.parse(localStorage.getItem(LS_PIN)) || { enabled: false, autoLock: 'always' };
+    const raw = localStorage.getItem(LS_PIN);
+    if (raw) return JSON.parse(raw);
+    return { ...DEFAULT_PIN_CONFIG };
   } catch(e) {
-    return { enabled: false, autoLock: 'always' };
+    return { ...DEFAULT_PIN_CONFIG };
   }
 }
 
@@ -1575,7 +1584,7 @@ async function checkPinMatch(enteredPin, config) {
   return h === config.hash;
 }
 
-let isSystemLocked = false;
+let isSystemLocked = true;
 let currentEnteredPin = '';
 let isCheckingPin = false;
 let idleTimer = null;
